@@ -1,16 +1,18 @@
 import React, {ChangeEvent, KeyboardEvent, useState} from "react";
 import {FilterValuesType} from "./App";
-import {Simulate} from "react-dom/test-utils";
-import change = Simulate.change;
 
 type TodoListPropsType = {
+    todoListID: string
     title: string
     tasks: TaskType[]
     filter: FilterValuesType
-    removeTask: (taskId: string) => void
-    addTask: (title: string) => void
-    changeFilter: (nextFilter: FilterValuesType) => void
-    changeTaskStatus: (taskId: string, newIsDoneValue: boolean) => void
+
+    removeTask: (taskId: string, todoListID: string) => void
+    addTask: (title: string, todoListID: string) => void
+    changeTaskStatus: (taskId: string, newIsDoneValue: boolean, todoListID: string) => void
+
+    removeTodoList: (todoListID: string) => void
+    changeTodoListFilter: (nextFilter: FilterValuesType, todoListID: string) => void
 }
 
 export type TaskType = {
@@ -28,37 +30,37 @@ const TodoList: React.FC<TodoListPropsType> = (props: TodoListPropsType) => {
         error && setError(false);
         setTitle(e.currentTarget.value);
     }
-
-
     const addTaskHandler = () => {
         const trimmedTitle = title.trim();
         if (trimmedTitle) {
-            props.addTask(trimmedTitle);
+            props.addTask(trimmedTitle, props.todoListID);
         } else {
             setError(true);
         }
         setTitle("");
     }
+    const handlerCreator = (filter: FilterValuesType) => () => props.changeTodoListFilter(filter, props.todoListID);
+    const addTaskOnKeyPressHandler = (e: KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && !isAddBtnDisabled && addTaskHandler();
+    const removeTodoListHandler = () => props.removeTodoList(props.todoListID)
 
-    const tasksListItems: Array<JSX.Element> = props.tasks.map((t) => {
-        const removeTask = () => props.removeTask(t.id);
-        const changeTaskStatus = (e: ChangeEvent<HTMLInputElement>) => props.changeTaskStatus(t.id, e.currentTarget.checked);
-        const taskClasses = t.isDone ? "task-isDone" : "task";
+    const tasksListItems: Array<JSX.Element> = props.tasks.map((task) => {
+        const removeTask = () => props.removeTask(task.id, props.todoListID);
+        const changeTaskStatus = (e: ChangeEvent<HTMLInputElement>) => props.changeTaskStatus(task.id, e.currentTarget.checked, props.todoListID);
+        const taskClasses = task.isDone ? "task-isDone" : "task";
         return (
-            <li>
+            <li key={task.id}>
                 <div>
                     <input
                         type="checkbox"
-                        checked={t.isDone}
+                        checked={task.isDone}
                         onChange={changeTaskStatus}
                     />
-                    <span className={taskClasses}>{t.title}</span>
+                    <span className={taskClasses}>{task.title}</span>
                 </div>
                 <button onClick={removeTask}>X</button>
             </li>
         )
     });
-
     const titleMaxLength = 25;
     const isTitleLengthTooLong: boolean = title.length > titleMaxLength;
     const isAddBtnDisabled: boolean = !title.length || title.length > titleMaxLength;
@@ -68,12 +70,14 @@ const TodoList: React.FC<TodoListPropsType> = (props: TodoListPropsType) => {
     const userMessage = error
         ? <div style={{color: "red"}}>Title is required</div>
         : null;
-    const handlerCreator = (filter: FilterValuesType) => () => props.changeFilter(filter);
-    const addTaskOnKeyPressHandler = (e: KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && !isAddBtnDisabled && addTaskHandler();
     const inputClasses = error || isTitleLengthTooLong ? "input-error" : undefined;
     return (
         <div className="todolist">
-            <h3>{props.title}</h3>
+            <header className="todolist-header">
+                <h2>{props.title}</h2>
+                <button onClick={removeTodoListHandler}>x</button>
+            </header>
+
             <div>
                 <input
                     // ref={taskTitleInput}
