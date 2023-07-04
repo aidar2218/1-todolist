@@ -1,65 +1,86 @@
 import React, {useState} from 'react';
-import {FilterValueType} from "./App";
+import {FilterValuesType} from './App';
 
 type TaskType = {
-    id: number
+    id: string
     title: string
     isDone: boolean
 }
 
 type PropsType = {
     title: string
-    tasks: TaskType[]
-    removeTask: (id: number) => void
+    tasks: Array<TaskType>
+    removeTask: (taskId: string) => void
+    changeFilter: (value: FilterValuesType) => void
+    addTask: (taskTitle: string) => void
 }
 
 export function Todolist(props: PropsType) {
 
-    let [valueFilter, setValueFilter] = useState<FilterValueType>('all');
+    let [taskTitle, setTaskTitle] = useState("");
 
-    const taskFilter = (value: FilterValueType) => {
-        setValueFilter(value);
+    const addTaskHandler = () => {
+        props.addTask(taskTitle);
+        setTaskTitle("");
     }
 
-    const durshlagFunc = () => {
-        let durshlag = props.tasks;
-
-        switch (valueFilter) {
-            case "active":
-                return durshlag = props.tasks.filter(el => !el.isDone);
-            case "completed":
-                return durshlag = props.tasks.filter(el => el.isDone);
-            default: return durshlag
-        }
+    const changeFilterHandler = (value: FilterValuesType) => {
+        props.changeFilter(value);
     }
+
 
     return <div>
         <h3>{props.title}</h3>
         <div>
-            <input/>
-            <button>+</button>
+            <input value={taskTitle}
+                   onChange={(e) => {
+                       setTaskTitle(e.currentTarget.value);
+                   }}
+                   onKeyPress={(e) => {
+                       if (e.key === "Enter") {
+                           addTaskHandler();
+                       }
+                   }}
+            />
+            <button onClick={() => {
+                if (taskTitle.trim() !== "") {
+                    addTaskHandler();
+                }
+            }}>+
+            </button>
         </div>
         <ul>
-            {durshlagFunc().map((task, index) => {
-                return (
-                    <li key={task.id}>
-                        <input type="checkbox" checked={task.isDone}/>
-                        <span>{task.title}</span>
-                        <button onClick={() => props.removeTask(task.id)}>X</button>
-                    </li>
-                )
-            })}
+            {
+                props.tasks.map(t => {
+                    return (
+                        <li key={t.id}>
+                            <input type="checkbox" checked={t.isDone}/>
+                            <span>{t.title}</span>
+                            <button onClick={() => {
+                                props.removeTask(t.id)
+                            }}>x
+                            </button>
+                        </li>
+                    )
+                })
+            }
         </ul>
         <div>
             <button onClick={() => {
-                taskFilter("all")
-            }}>All</button>
+                changeFilterHandler("all")
+            }}>
+                All
+            </button>
             <button onClick={() => {
-                taskFilter("active")
-            }}>Active</button>
+                changeFilterHandler("active")
+            }}>
+                Active
+            </button>
             <button onClick={() => {
-                taskFilter("completed")
-            }}>Completed</button>
+                changeFilterHandler("completed")
+            }}>
+                Completed
+            </button>
         </div>
     </div>
 }
